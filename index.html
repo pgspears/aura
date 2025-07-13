@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Engine 2.2</title>
+    <style>
+        :root {
+            --bg-color: #050308; --panel-bg: #1a1c22; --control-bg: #2a2d35;
+            --control-hover: #3a3d45; --text-primary: #e0e0e0; --text-secondary: #a0a0b0;
+            --accent-color: #80a0ff; --record-color: #e53935; --record-hover: #f44336;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-primary);
+            font-family: var(--font-family); overflow: hidden; display: flex;
+        }
+        #auraCanvas { display: block; }
+        #gui-panel {
+            width: 300px; height: 100vh; background-color: var(--panel-bg); padding: 15px;
+            box-sizing: border-box; user-select: none; display: flex; flex-direction: column;
+        }
+        #gui-controls-wrapper { flex-grow: 1; overflow-y: auto; }
+        .gui-section {
+            margin-bottom: 20px; border-bottom: 1px solid var(--control-bg); padding-bottom: 15px;
+        }
+        .gui-section h3 {
+            margin-top: 0; font-size: 16px; font-weight: 600; color: var(--accent-color);
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .control-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+        }
+        .control-row label, .checkbox-label { font-size: 14px; color: var(--text-secondary); }
+        select, button {
+            width: 100%; background-color: var(--control-bg); color: var(--text-primary);
+            border: none; padding: 8px; border-radius: 4px; font-size: 14px; cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover, select:hover { background-color: var(--control-hover); }
+        #record-btn { background-color: var(--record-color); }
+        #record-btn:hover { background-color: var(--record-hover); }
+        #record-btn.recording { background-color: #4CAF50; }
+        #record-btn.recording:hover { background-color: #66BB6A; }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 140px; height: 5px;
+            background: var(--control-bg); outline: none; border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 15px; height: 15px;
+            background: var(--accent-color); cursor: pointer; border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 15px; height: 15px; background: var(--accent-color);
+            cursor: pointer; border-radius: 50%; border: none;
+        }
+        input[type="checkbox"] { accent-color: var(--accent-color); }
+        .footer {
+            flex-shrink: 0; padding-top: 15px; text-align: center;
+            font-size: 12px; color: #606070;
+        }
+        .about-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <canvas id="auraCanvas"></canvas>
+    
+    <div id="gui-panel">
+        <div id="gui-controls-wrapper">
+            <div class="gui-section">
+                <h3>System &amp; Output</h3>
+                <button id="record-btn">● Record Video</button>
+                 <div class="control-row" style="margin-top: 10px;">
+                    <label class="checkbox-label" for="record-ui-check">Record Full UI</label>
+                    <input type="checkbox" id="record-ui-check">
+                </div>
+                <button id="screenshot-btn" style="margin-top: 5px;">Save Screenshot</button>
+                <button id="clear-btn" style="margin-top: 5px;">Clear Canvas</button>
+            </div>
+            
+            <div class="gui-section">
+                <h3>Demos (Physics Showcase)</h3>
+                <select id="demo-select">
+                    <option value="">Load Demo...</option>
+                    <option value="binaryStar">Binary Star System</option>
+                    <option value="gravityWell">Gravity Well</option>
+                    <option value="particleGeyser">Particle Geyser</option>
+                    <option value="orbitalDance">Orbital Dance</option>
+                    <option value="repulsorShield">Repulsor Shield</option>
+                </select>
+            </div>
+
+            <div class="gui-section">
+                <h3>Brush</h3>
+                <select id="brush-select">
+                    <option value="swarm">Swarm</option>
+                    <option value="flow">Flow</option>
+                    <option value="growth">Growth</option>
+                    <option value="sparks">Sparks</option>
+                </select>
+                <div class="control-row" style="margin-top: 15px;"><label for="count-slider">Count</label><input type="range" id="count-slider" min="1" max="50" value="12"></div>
+                <div class="control-row"><label for="lifespan-slider">Lifespan</label><input type="range" id="lifespan-slider" min="50" max="1000" value="150"></div>
+                <div class="control-row"><label for="speed-slider">Speed</label><input type="range" id="speed-slider" min="0.1" max="20" step="0.1" value="5"></div>
+                <div class="control-row"><label for="radius-slider">Radius</label><input type="range" id="radius-slider" min="0.5" max="50" step="0.5" value="4"></div>
+            </div>
+
+            <div class="gui-section">
+                <h3>Physics</h3>
+                <div class="control-row"><label class="checkbox-label" for="mouse-force-check">Mouse Force Field</label><input type="checkbox" id="mouse-force-check"></div>
+                <div class="control-row"><label for="force-strength-slider">Mouse Strength</label><input type="range" id="force-strength-slider" min="-10" max="10" step="0.1" value="3.0"></div>
+                <div class="control-row"><label class="checkbox-label" for="global-gravity-check">Global Gravity</label><input type="checkbox" id="global-gravity-check"></div>
+                 <div class="control-row"><label for="gravity-strength-slider">Gravity Strength</label><input type="range" id="gravity-strength-slider" min="0" max="0.2" step="0.005" value="0.05"></div>
+            </div>
+            
+            <div class="gui-section">
+                <h3>Effects</h3>
+                <select id="color-select">
+                    <option value="Stellar Nursery">Stellar Nursery</option>
+                    <option value="Oceanic Glow">Oceanic Glow</option>
+                    <option value="Cyberpunk">Cyberpunk</option>
+                    <option value="Monochrome">Monochrome</option>
+                </select>
+                <div class="control-row" style="margin-top: 15px;"><label class="checkbox-label" for="bloom-check">Bloom</label><input type="checkbox" id="bloom-check" checked></div>
+                <div class="control-row"><label class="checkbox-label" for="vignette-check">Vignette</label><input type="checkbox" id="vignette-check" checked></div>
+                <div class="control-row"><label for="trail-slider">Trail Length</label><input type="range" id="trail-slider" min="0" max="0.3" step="0.01" value="0.1"></div>
+            </div>
+
+            <div class="gui-section">
+                <h3>About</h3>
+                <p class="about-text">
+                    <b>Aura Engine</b> is a digital art tool for creating generative motion art. It combines a particle physics engine with procedural brushes to produce beautiful, dynamic visuals.
+                    <br><br>
+                    Built with HTML5 Canvas, pure JavaScript, and CSS. No external libraries used.
+                </p>
+            </div>
+        </div>
+        <div class="footer">
+            &copy; 2025 Accelerate Solutions, LLC
+        </div>
+    </div>
+
+    <script>
+    window.addEventListener('load', () => { new AuraApp(); });
+
+    const COLOR_HARMONIES = {
+        "Stellar Nursery": ["#ff9650", "#b450ff", "#50c8ff"], "Oceanic Glow": ["#00e676", "#1de9b6", "#64b5f6"],
+        "Cyberpunk": ["#f44336", "#e91e63", "#9c27b0"], "Monochrome": ["#eceff1", "#b0bec5", "#607d8b"],
+    };
+
+    class Particle {
+        constructor(pos, vel, lifespan, radius, color, friction = 0.98, turbulence = 0.1) {
+            this.pos=pos; this.vel=vel; this.lifespan=lifespan; this.initialLifespan=lifespan;
+            this.radius=radius; this.color=color; this.friction=friction; this.turbulence=turbulence;
+        }
+        isAlive() { return this.lifespan > 0; }
+        applyForce(force) { this.vel.x += force.x; this.vel.y += force.y; }
+        update(globalGravity) {
+            this.pos.x += this.vel.x; this.pos.y += this.vel.y;
+            this.vel.x *= this.friction; this.vel.y *= this.friction;
+            if(this.turbulence > 0) { this.vel.x += (Math.random()-0.5)*this.turbulence; this.vel.y += (Math.random()-0.5)*this.turbulence; }
+            if(globalGravity) { this.applyForce(globalGravity); }
+            this.lifespan--;
+        }
+        draw(ctx) {
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = Math.pow(this.lifespan / this.initialLifespan, 2);
+            ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    class GrowthNode extends Particle {
+        constructor(pos, color, angle, lifespan, radius) { super(pos, {x:0, y:0}, lifespan, radius, color, 1.0, 0); this.angle = angle; }
+        update(globalGravity, app) {
+            this.lifespan--; if (!this.isAlive()) return;
+            this.angle += (Math.random() - 0.5) * 0.8;
+            this.pos.x += Math.cos(this.angle) * 2; this.pos.y += Math.sin(this.angle) * 2;
+            if (Math.random() < 0.05) {
+                const branchAngle = this.angle + (Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2);
+                app.particles.push(new GrowthNode({...this.pos}, this.color, branchAngle, this.initialLifespan*0.6, this.radius));
+            }
+        }
+        draw(ctx) {
+            ctx.fillStyle = this.color; ctx.globalAlpha = 1.0;
+            ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    class AuraApp {
+        constructor() {
+            this.canvas = document.getElementById('auraCanvas'); this.ctx = this.canvas.getContext('2d');
+            this.resizeCanvas();
+            this.particles = []; this.effectors = []; this.mouse = { x: 0, y: 0, isDown: false };
+            this.colorTime = 0; this.mediaRecorder = null; this.recordedChunks = []; this.geyserInterval = null;
+            this.brushes = {
+                swarm: { defaults: { count: 12, lifespan: 150, speed: 5, radius: 4, friction: 0.98, turbulence: 0.1 } },
+                flow: { defaults: { count: 15, lifespan: 300, speed: 2, radius: 25, friction: 0.94, turbulence: 0.05 } },
+                growth: { defaults: { count: 1, lifespan: 800, radius: 2 } },
+                sparks: { defaults: { count: 20, lifespan: 80, speed: 18, radius: 2.5, friction: 0.96, turbulence: 0.3 } },
+            };
+            this.bindDOM(); this.updateSettings(); this.gameLoop();
+        }
+        resizeCanvas() { this.canvas.width = window.innerWidth - 300; this.canvas.height = window.innerHeight; }
+        bindDOM() {
+            window.addEventListener('resize', () => this.resizeCanvas());
+            this.canvas.addEventListener('mousedown', () => this.mouse.isDown = true);
+            this.canvas.addEventListener('mouseup', () => this.mouse.isDown = false);
+            this.canvas.addEventListener('mousemove', (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; });
+            this.canvas.addEventListener('mouseleave', () => this.mouse.isDown = false);
+            document.querySelectorAll('#gui-panel input, #gui-panel select').forEach(el => el.addEventListener('input', () => this.updateSettings()));
+            document.getElementById('clear-btn').addEventListener('click', () => { this.particles = []; this.effectors = []; });
+            document.getElementById('screenshot-btn').addEventListener('click', () => this.saveScreenshot());
+            document.getElementById('record-btn').addEventListener('click', () => this.toggleRecording());
+            document.getElementById('demo-select').addEventListener('change', (e) => this.loadDemo(e.target.value));
+            document.getElementById('brush-select').addEventListener('change', () => {
+                const defaults = this.brushes[this.settings.brush.type].defaults;
+                Object.keys(defaults).forEach(key => {
+                    const slider = document.getElementById(`${key}-slider`);
+                    if (slider) slider.value = defaults[key];
+                });
+                this.updateSettings();
+            });
+        }
+        updateSettings() {
+            this.settings = {
+                brush: { type: document.getElementById('brush-select').value, count: +document.getElementById('count-slider').value, lifespan: +document.getElementById('lifespan-slider').value, speed: +document.getElementById('speed-slider').value, radius: +document.getElementById('radius-slider').value },
+                physics: { mouseForce: document.getElementById('mouse-force-check').checked, mouseStrength: +document.getElementById('force-strength-slider').value, globalGravity: document.getElementById('global-gravity-check').checked, gravityStrength: +document.getElementById('gravity-strength-slider').value },
+                effects: { color: document.getElementById('color-select').value, bloom: document.getElementById('bloom-check').checked, vignette: document.getElementById('vignette-check').checked, trail: +document.getElementById('trail-slider').value },
+                output: { recordUI: document.getElementById('record-ui-check').checked }
+            };
+            document.getElementById('speed-slider').disabled = this.settings.brush.type === 'growth';
+        }
+        getDynamicColor() {
+            this.colorTime += 0.02; const h = COLOR_HARMONIES[this.settings.effects.color]; const i=Math.floor(this.colorTime), f=this.colorTime-i;
+            const c1=h[i%h.length], c2=h[(i+1)%h.length]; const p=(s,j)=>parseInt(s.slice(j,j+2),16);
+            const r=Math.round(p(c1,1)+(p(c2,1)-p(c1,1))*f), g=Math.round(p(c1,3)+(p(c2,3)-p(c1,3))*f), b=Math.round(p(c1,5)+(p(c2,5)-p(c1,5))*f);
+            return `rgb(${r},${g},${b})`;
+        }
+        paint() {
+            if (!this.mouse.isDown) return; const s = this.settings.brush; const c = this.getDynamicColor();
+            for (let i=0; i<s.count; i++) {
+                const p={x:this.mouse.x,y:this.mouse.y}, r=Math.random()*s.radius+s.radius*0.5, a=Math.random()*Math.PI*2;
+                if (s.type === 'growth') { this.particles.push(new GrowthNode(p,c,a,s.lifespan,r)); continue; }
+                const sp=Math.random()*s.speed, v={x:Math.cos(a)*sp,y:Math.sin(a)*sp};
+                if (s.type === 'sparks') { v.y -= Math.random()*s.speed*0.5; }
+                this.particles.push(new Particle(p,v,s.lifespan,r,c,this.brushes[s.type].defaults.friction,this.brushes[s.type].defaults.turbulence));
+            }
+        }
+        loadDemo(name) {
+            this.particles=[]; this.effectors=[]; if(this.geyserInterval) clearInterval(this.geyserInterval); this.geyserInterval=null;
+            const W=this.canvas.width, H=this.canvas.height; let s={g:false};
+            if(name==='binaryStar'){s.g=false;this.effectors.push({pos:{x:W/2-150,y:H/2},strength:5},{pos:{x:W/2+150,y:H/2},strength:5}); for(let i=0;i<800;i++)this.particles.push(new Particle({x:W/2+(Math.random()-0.5)*10,y:H/2-250},{x:(Math.random()-0.5)*2,y:0},2000,Math.random()*2+1,this.getDynamicColor(),1.0,0));}
+            else if(name==='gravityWell'){s.g=false;this.effectors.push({pos:{x:W/2,y:H/2},strength:8});for(let i=0;i<500;i++){const a=Math.random()*Math.PI*2;this.particles.push(new Particle({x:W/2+Math.cos(a)*W/2.1,y:H/2+Math.sin(a)*W/2.1},{x:Math.cos(a-Math.PI/2)*4,y:Math.sin(a-Math.PI/2)*4},1500,Math.random()*2+1,this.getDynamicColor(),1.0,0));}}
+            else if(name==='particleGeyser'){s.g=true;this.geyserInterval=setInterval(()=>{for(let i=0;i<10;i++)this.particles.push(new Particle({x:W/2+(Math.random()-0.5)*20,y:H},{x:(Math.random()-0.5)*3,y:-Math.random()*12-8},400,Math.random()*4+2,this.getDynamicColor()));},50);}
+            else if(name==='orbitalDance'||name==='repulsorShield'){s.g=false;const st=name==='orbitalDance'?3:-8;this.effectors.push({pos:{x:W/2,y:H/2},strength:st});if(name==='orbitalDance')this.effectors.push({pos:{x:W/2+300,y:H/2},strength:st});for(let i=0;i<800;i++){const a=Math.random()*Math.PI*2,d=Math.random()*250+150;this.particles.push(new Particle({x:W/2+Math.cos(a)*d,y:H/2+Math.sin(a)*d},{x:0,y:0},500,Math.random()*3+1,this.getDynamicColor()));}}
+            document.getElementById('global-gravity-check').checked=s.g; this.updateSettings(); document.getElementById('demo-select').value="";
+        }
+        update() {
+            this.paint(); let se=this.effectors.slice(), de=[];
+            if(this.settings.physics.mouseForce) de.push({pos:this.mouse,strength:this.settings.physics.mouseStrength});
+            const gg=this.settings.physics.globalGravity?{x:0,y:this.settings.physics.gravityStrength}:null;
+            for (let i=this.particles.length-1;i>=0;i--){
+                const p=this.particles[i]; if(!p.isAlive()){this.particles.splice(i,1);continue;}
+                if(p instanceof GrowthNode){p.update(gg,this);}else{p.update(gg);}
+                [...se,...de].forEach(e=>{const d={x:e.pos.x-p.pos.x,y:e.pos.y-p.pos.y};const ds=d.x*d.x+d.y*d.y;if(ds>1){const dst=Math.sqrt(ds);p.applyForce({x:(d.x/dst)*e.strength/(dst*0.1+1),y:(d.y/dst)*e.strength/(dst*0.1+1)});}});
+            }
+        }
+        draw() {
+            const c=this.ctx,W=this.canvas.width,H=this.canvas.height; c.globalCompositeOperation='source-over';
+            c.fillStyle=`rgba(5,3,8,${1.0-this.settings.effects.trail})`; c.fillRect(0,0,W,H); c.globalCompositeOperation='lighter';
+            for(const p of this.particles)p.draw(c); c.globalAlpha=1.0; c.globalCompositeOperation='source-over';
+            if(this.settings.effects.bloom){c.filter='blur(10px) brightness(150%)';c.drawImage(this.canvas,0,0);c.filter='none';}
+            if(this.settings.effects.vignette){const g=c.createRadialGradient(W/2,H/2,W/3,W/2,H/2,W/2+150);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.8)');c.fillStyle=g;c.fillRect(0,0,W,H);}
+        }
+        saveScreenshot(){const l=document.createElement('a');l.download=`Aura_Screenshot_${Date.now()}.png`;l.href=this.canvas.toDataURL();l.click();}
+        toggleRecording(){const b=document.getElementById('record-btn');if(this.mediaRecorder&&this.mediaRecorder.state==="recording"){this.mediaRecorder.stop();b.textContent="● Record Video";b.classList.remove('recording');}else{this.startRecording().catch(err=>{console.error("Recording failed:",err);b.textContent="● Record Video";b.classList.remove('recording');});}}
+        async startRecording() {
+            let stream;
+            if (this.settings.output.recordUI) {
+                stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: "tab" }, audio: false });
+            } else {
+                stream = this.canvas.captureStream();
+            }
+            this.recordedChunks = [];
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+            this.mediaRecorder.ondataavailable=(e)=>{if(e.data.size>0)this.recordedChunks.push(e.data);};
+            this.mediaRecorder.onstop=()=>{const b=new Blob(this.recordedChunks,{type:'video/webm'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.style.display='none';a.href=u;a.download=`Aura_Recording_${Date.now()}.webm`;document.body.appendChild(a);a.click();window.URL.revokeObjectURL(u);};
+            this.mediaRecorder.start();
+            document.getElementById('record-btn').textContent = "■ Stop Recording";
+            document.getElementById('record-btn').classList.add('recording');
+        }
+        gameLoop() { this.update(); this.draw(); requestAnimationFrame(() => this.gameLoop()); }
+    }
+    </script>
+</body>
+</html>
